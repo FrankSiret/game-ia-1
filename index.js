@@ -93,7 +93,6 @@ function getCell(pos) {
 }
 
 function moveTop(ind = 0, inc = -1) {
-
     const to = [...current]
     to[ind] += inc;
     const cell = getCell(current)
@@ -126,13 +125,68 @@ function moveRight() {
     moveTop(1, 1)
 }
 
+// Clase cola
+class Queue {
+    constructor() {
+        this.items = {};
+        this.headIndex = 0;
+        this.tailIndex = 0;
+    }
+
+    enqueue(item) {
+        this.items[this.tailIndex] = item;
+        this.tailIndex++;
+    }
+
+    dequeue() {
+        const item = this.items[this.headIndex];
+        delete this.items[this.headIndex];
+        this.headIndex++;
+        return item;
+    }
+
+    peek() {
+        return this.items[this.headIndex];
+    }
+
+    get length() {
+        return this.tailIndex - this.headIndex;
+    }
+
+    clear() {
+        this.items = {};
+        this.headIndex = 0;
+        this.tailIndex = 0;
+    }
+}
+
+// Lista de acciones a ejecutar
+var runActions = null
+
+// id de intervalo de ejecución
+var intervalId = 0
+
+// Tiempo de actualización en milisegundos
+const TIME = 100
+
 function start() {
+    current = [...entrance]
     btn_start.innerText = "Stop"
     btn_start.classList.remove("start")
     btn_start.classList.add("stop")
     inSolve = true;
 
     YOUR_CODE_HERE()
+
+    clearInterval(intervalId)
+
+    // Cada medio segundo ejecutar una acción
+    intervalId = setInterval(() => {
+        if (runActions.length > 0) {
+            let action = runActions.dequeue()
+            action()
+        }
+    }, TIME)
 
     stop()
 }
@@ -150,6 +204,8 @@ btn_start.addEventListener('click', () => {
 })
 
 document.getElementById("reset").addEventListener('click', () => {
+    clearInterval(intervalId)
+    runActions = null
     ready();
 }, false)
 
@@ -161,6 +217,9 @@ document.addEventListener("DOMContentLoaded", function (event) {
 const visited = new Set()
 
 function YOUR_CODE_HERE() {
+    // Inicializar cola de acciones
+    runActions = new Queue()
+
     /* SU CODIGO COMIENZA AQUI */
 
     // Limpiar lista de puntos visitados
@@ -169,8 +228,8 @@ function YOUR_CODE_HERE() {
     // Agregar punto actual a la lista de puntos visitados.
     visited.add(JSON.stringify(current))
 
-    // Ir desde la posición actual (la entrada) hasta donde está la llave.
-    goTo(table, current, key)
+    // Ir desde la entrada hasta donde está la llave.
+    goTo(table, entrance, key)
 
     // Después de encontrar la llave se vuelve a resolver el mismo problema
     // de ir de una posición del laberinto a otra.
@@ -181,8 +240,8 @@ function YOUR_CODE_HERE() {
     // Agregar punto actual a la lista de puntos visitados
     visited.add(JSON.stringify(current))
 
-    // Ir desde la posición actual (la llave) hasta la salida
-    goTo(table, current, exit)
+    // Ir desde la llave hasta la salida
+    goTo(table, key, exit)
 
     /* HASTA AQUI */
 }
@@ -217,13 +276,12 @@ const goTo = (map, [x, y], [xt, yt]) => {
             // de puntos visistados
             visited.add(JSON.stringify(a.point))
 
-            // Se ejecuta la acción
-            a.action()
+            runActions.enqueue(a.action)
         }
 
         // Ahora el nuevo problema es ir desde el nuevo punto actual hasta el objetivo
         // Se realiza llamada recursiva a la función goTo para que resuelva el problema
-        let result = goTo(map, current, [xt, yt])
+        let result = goTo(map, a.point, [xt, yt])
 
         // Si el resultado es true significa que se logró llegar al objetivo
         // Se retorna true también
@@ -233,7 +291,7 @@ const goTo = (map, [x, y], [xt, yt]) => {
         // contraria a la que habíamos realizado antes, y se contiúa el ciclo con la siguiente
         // acción de la lista
         else {
-            a.backAction()
+            runActions.enqueue(a.backAction)
         }
 
     }
@@ -330,10 +388,13 @@ const see = (map, [x, y]) => {
     }
 }
 
-// Función para calcular la distancia de un punto a otro.
+// Función para calcular la distancia de un punto a otro en el laberinto
 const dist = ([x1, x2], [y1, y2]) => {
-    const a = x1 - x2
-    const b = y1 - y2
+    let a = x1 - x2
+    let b = y1 - y2
 
-    return Math.sqrt(a * a + b * b)
+    a = a * a
+    b = b * b
+
+    return a > b ? a : b
 }
