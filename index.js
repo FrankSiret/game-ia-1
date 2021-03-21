@@ -1,6 +1,7 @@
 console.log("start")
 const btn_start = document.getElementById("btn_start")
 const solver = document.getElementById("solver")
+const timer = document.getElementById("timer")
 
 var inSolve = false; /// esta variable se refiere a si su algoritmo esta en ejecucion
 var current = [0, 0]; /// esta es su posicion en el laverinto
@@ -22,7 +23,7 @@ var exit = [0, 0]
 var entrance = [0, 0]
 
 /** 
- * SU CODIGO VA EN LA LINEA 162, PUEDEN USAR TANTAS FUNCIONES COMO QUIERAN
+ * SU CODIGO VA EN LA LINEA 175, PUEDEN USAR TANTAS FUNCIONES COMO QUIERAN
  * POR FAVOR NO MODIFICAR NINGUN CODIGO DE ESTE JS SIN EL CONSENTIMIENTO DEL PROFESOR 
  * 🍖🧀 EXCEPCION: EN LA LINEA 40 Y 41 SE GENERA EL TAMAÑO DEL TABLERO PEDEN MODIFICARLO PARA PROVAR SU CODIGO
  *
@@ -94,46 +95,58 @@ function getCell(pos) {
 
 function moveTop(ind = 0, inc = -1) {
 
-    const to = [...current]
-    to[ind] += inc;
-    const cell = getCell(current)
-    const cell_to = getCell(to)
+    return new Promise((res, rel) => {
 
-    console.log(cell)
-    console.log(cell_to)
+        setTimeout(() => {
+            const to = [...current]
+            to[ind] += inc;
+            const cell = getCell(current)
+            const cell_to = getCell(to)
 
-    cell.classList.remove("current")
-    if (cell_to.classList.contains("path")) {
-        cell.classList.add("old")
-    }
-    else {
-        cell.classList.add("path")
-    }
-    cell_to.classList.add("current")
-    cell_to.classList.remove("path")
-    cell_to.classList.remove("old")
-    current = [...to]
+            // console.log(cell)
+            // console.log(cell_to)
+
+            cell.classList.remove("current")
+            if (cell_to.classList.contains("path")) {
+                cell.classList.add("old")
+            }
+            else {
+                cell.classList.add("path")
+            }
+            cell_to.classList.add("current")
+            cell_to.classList.remove("path")
+            cell_to.classList.remove("old")
+            current = [...to]
+
+            res()
+        }, +timer.value);
+
+    })
 }
 
 function moveDown() {
-    moveTop(0, 1)
+    return moveTop(0, 1)
 }
 
 function moveLeft() {
-    moveTop(1, -1)
+    return moveTop(1, -1)
 }
 
 function moveRight() {
-    moveTop(1, 1)
+    return moveTop(1, 1)
 }
 
-function start() {
-    btn_start.innerText = "Stop"
+async function start() {
+    btn_start.innerText = "Wait"
     btn_start.classList.remove("start")
     btn_start.classList.add("stop")
     inSolve = true;
 
-    YOUR_CODE_HERE()
+    configureSolver(n, m)
+    current = [...entrance]
+    getCell(current).classList.add("current")
+
+    await YOUR_CODE_HERE()
 
     stop()
 }
@@ -146,8 +159,8 @@ function stop() {
 }
 
 btn_start.addEventListener('click', () => {
-    if (inSolve) stop()
-    else if (!inSolve) start();
+    // if (inSolve) stop()
+    if (!inSolve) start();
 })
 
 document.getElementById("reset").addEventListener('click', () => {
@@ -159,22 +172,24 @@ document.addEventListener("DOMContentLoaded", function (event) {
 });
 
 
-function YOUR_CODE_HERE() {
+async function YOUR_CODE_HERE() {
 
     /* SU CODIGO COMIENZA AQUI */
 
     // es programar un algoritmo de los q estan en la conferencia, les recomiendo buesqueda en profundidad
     // como ejemplo estos son los movimientos permitidos para moverse por el laverinto
 
-    moveTop()
-    moveTop()
-    moveTop()
-    moveTop()
-    moveDown()
-    moveLeft()
-    moveLeft()
-    moveRight()
-    moveDown()
+    // cada movimiento que ejecuten deven poner la palabra clave await, esto para que se vea un delay entre movimientos y quede mas pro !
+
+    await moveTop()
+    await moveTop()
+    await moveTop()
+    await moveTop()
+    await moveDown()
+    await moveLeft()
+    await moveLeft()
+    await moveRight()
+    await moveDown()
 
     /* HASTA AQUI */
 

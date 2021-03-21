@@ -22,7 +22,7 @@ body {
     margin: auto;
 }
 
-#btn_start, #reset {
+#btn_start, #reset, #timer {
     margin: 1rem;
     display: block;
     height: 30px;
@@ -31,6 +31,12 @@ body {
     border-radius: 2px;
     color: white;
     font-weight: 600;
+}
+
+#timer {
+    padding-left: 10px;
+    color: black;
+    border: 1px solid black;
 }
 
 #btn_start.start {
