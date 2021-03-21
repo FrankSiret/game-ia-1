@@ -163,6 +163,9 @@ const visited = new Set()
 function YOUR_CODE_HERE() {
     /* SU CODIGO COMIENZA AQUI */
 
+    // Limpiar lista de puntos visitados
+    visited.clear()
+
     // Agregar punto actual a la lista de puntos visitados.
     visited.add(JSON.stringify(current))
 
