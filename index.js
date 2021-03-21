@@ -99,7 +99,6 @@ function moveTop(ind = 0, inc = -1) {
     const cell = getCell(current)
     const cell_to = getCell(to)
 
-    console.log(cell)
     console.log(cell_to)
 
     cell.classList.remove("current")
@@ -158,24 +157,180 @@ document.addEventListener("DOMContentLoaded", function (event) {
     ready();
 });
 
+// Lista para almacenar los puntos que han sido visitados
+const visited = new Set()
 
 function YOUR_CODE_HERE() {
-
     /* SU CODIGO COMIENZA AQUI */
 
-    // es programar un algoritmo de los q estan en la conferencia, les recomiendo buesqueda en profundidad
-    // como ejemplo estos son los movimientos permitidos para moverse por el laverinto
+    // Agregar punto actual a la lista de puntos visitados.
+    visited.add(JSON.stringify(current))
 
-    moveTop()
-    moveTop()
-    moveTop()
-    moveTop()
-    moveDown()
-    moveLeft()
-    moveLeft()
-    moveRight()
-    moveDown()
+    // Ir desde la posición actual (la entrada) hasta donde está la llave.
+    goTo(table, current, key)
+
+    // Después de encontrar la llave se vuelve a resolver el mismo problema
+    // de ir de una posición del laberinto a otra.
+
+    // Limpiar lista de puntos visitados.
+    visited.clear()
+
+    // Agregar punto actual a la lista de puntos visitados
+    visited.add(JSON.stringify(current))
+
+    // Ir desde la posición actual (la llave) hasta la salida
+    goTo(table, current, exit)
 
     /* HASTA AQUI */
+}
 
+// Función para desplazarse desde un punto a otro
+const goTo = (map, [x, y], [xt, yt]) => {
+    // Si el punto actual es igual al punto de destino, devuelve true
+    // problema resuelto
+    if (x == xt && y == yt) return true
+
+    // Si no
+    // Obtener lista de posibles acciones
+    // Las acciones sería moveTop, moveDown, moveLeft, moveRigth
+    // Pero esta función devuelve las acciones permitidas,
+    // teniendo en cuenta que no se atraviesen las paredes.
+    // Además calcula la distancia entre el próximo punto y el objetivo
+    // y ordena las acciones para seleccionar primero las que disminuyen más la
+    // distancia.
+    const actions = getActionList(map, [x, y], [xt, yt])
+
+    // Para cada acción de la lista de acciones seleccionadas
+    for (let a of actions) {
+        // Si el punto al que se llega trás realizar la acción ya fué
+        // visitado, no se realiza la acción y se continua con la siguiente
+        // acción de la lista
+        if (visited.has(JSON.stringify(a.point))) {
+            continue
+        }
+        // Si el punto al que se llega trás realizar la acción no se ha visitado
+        else {
+            // Se agrega el punto al que se llega trás realizar la acción a la lista
+            // de puntos visistados
+            visited.add(JSON.stringify(a.point))
+
+            // Se ejecuta la acción
+            a.action()
+        }
+
+        // Ahora el nuevo problema es ir desde el nuevo punto actual hasta el objetivo
+        // Se realiza llamada recursiva a la función goTo para que resuelva el problema
+        let result = goTo(map, current, [xt, yt])
+
+        // Si el resultado es true significa que se logró llegar al objetivo
+        // Se retorna true también
+        if (result) return true
+        // Si el resultado es false significa que no se logró llegar al objetivo después
+        // de haber realizado la acción seleccionada, por tanto se retrocede, se realiza la acción
+        // contraria a la que habíamos realizado antes, y se contiúa el ciclo con la siguiente
+        // acción de la lista
+        else {
+            a.backAction()
+        }
+
+    }
+
+    // Si no se logra el objetivo con ninguna de las acciones de la lista retornamos false
+    return false
+}
+
+
+// Función para obtener la lista de acciones válidas
+const getActionList = (map, [x, y], [xt, yt]) => {
+    // Obtener estado del ambiente
+    // El agente solo será capáz de ver los puntos que se encuentran adyacentes a él
+    // La función see devuelve un diccionario con las propiedades de cada punto adyacente
+    // a la posición del agente [top, left, right, down]
+    const ambient = see(map, [x, y])
+
+    // Lista para almacenar las acciones que se podrán realizar en dependencia
+    // de lo que se observa en el ambiente
+    const actions = []
+
+    // Seleccionar acciones según el estado del ambiente
+
+    // undefined = se sale del laberinto
+    // -1 = es un muro
+
+    // Se comprueba que sea válido realizar una acción en esa dirección,
+    // Además se agrega la distancia entre el punto al que se llega trás realizar
+    // la acción y el punto objetivo.
+    // Se agregan también las coordenadas del punto al que se llega tras realizar la acción y la
+    // acción de retroceso.
+
+    if (ambient.top != undefined && ambient.top != -1) {
+        actions.push({
+            dist: dist([x - 1, y], [xt, yt]),
+            action: moveTop,
+            backAction: moveDown,
+            point: [x - 1, y],
+        })
+    }
+
+    if (ambient.left != undefined && ambient.left != -1) {
+        actions.push({
+            dist: dist([x, y - 1], [xt, yt]),
+            action: moveLeft,
+            backAction: moveRight,
+            point: [x, y - 1],
+        })
+    }
+
+    if (ambient.rigth != undefined && ambient.rigth != -1) {
+        actions.push({
+            dist: dist([x, y + 1], [xt, yt]),
+            action: moveRight,
+            backAction: moveLeft,
+            point: [x, y + 1],
+        })
+    }
+
+    if (ambient.down != undefined && ambient.down != -1) {
+        actions.push({
+            dist: dist([x + 1, y], [xt, yt]),
+            action: moveDown,
+            backAction: moveTop,
+            point: [x + 1, y],
+        })
+    }
+
+    // Se ordena la lista de acciones según la distancia,
+    // las que tienen menor distancia van primero.
+    actions.sort((a, b) => {
+        // a es menor que b según criterio de ordenamiento
+        if (a.dist < b.dist) return -1
+        // a es mayor que b según criterio de ordenamiento
+        if (a.dist > b.dist) return 11
+
+        // a debe ser igual b
+        return 0
+    })
+
+    return actions
+}
+
+// Función para obtener el estado del ambiente
+// Devuelve el valor de la tabla que representa el laberinto 
+// en cada punto seleccionado, en caso de que el punto se salga de los
+// límites toma el valor de undefined.
+const see = (map, [x, y]) => {
+    return {
+        top: map[x - 1] ? map[x - 1][y] : undefined,
+        left: map[x] ? map[x][y - 1] : undefined,
+        rigth: map[x] ? map[x][y + 1] : undefined,
+        down: map[x + 1] ? map[x + 1][y] : undefined,
+    }
+}
+
+// Función para calcular la distancia de un punto a otro.
+const dist = ([x1, x2], [y1, y2]) => {
+    const a = x1 - x2
+    const b = y1 - y2
+
+    return Math.sqrt(a * a + b * b)
 }
