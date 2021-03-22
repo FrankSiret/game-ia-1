@@ -87,6 +87,33 @@ function configureSolver(n, m) {
     }
 
     solver.appendChild(container);
+
+    const info = document.getElementById("info")
+    while (info.firstChild) {
+        info.removeChild(info.firstChild)
+    }
+
+    const li =
+        `<li class="info-item">
+        <span class="info-title">Maze:</span>
+        <span class="info-value">${n} x ${m}</span>
+    </li>
+    <li class="info-item">
+        <span class="info-title">Entrance:</span>
+        <span class="info-value">(${entrance[0]}, ${entrance[1]})</span>
+    </li>
+    <li class="info-item">
+        <span class="info-title">Exit:</span>
+        <span class="info-value">(${exit[0]}, ${exit[1]})</span>
+    </li>
+    <li class="info-item">
+        <span class="info-title">Key:</span>
+        <span class="info-value">(${key[0]}, ${key[1]})</span>
+    </li>
+    `
+
+    info.insertAdjacentHTML('beforeend', li)
+
 }
 
 function getCell(pos) {
@@ -181,15 +208,66 @@ async function YOUR_CODE_HERE() {
 
     // cada movimiento que ejecuten deven poner la palabra clave await, esto para que se vea un delay entre movimientos y quede mas pro !
 
-    await moveTop()
-    await moveTop()
-    await moveTop()
-    await moveTop()
-    await moveDown()
-    await moveLeft()
-    await moveLeft()
-    await moveRight()
-    await moveDown()
+    const [ki, kj] = [...key]
+    const [ei, ej] = [...exit]
+    const [ci, cj] = [...current]
+    var bkey = false
+
+    const pi = [-1, 0, 1, 0]
+    const pj = [0, 1, 0, -1]
+
+    var mark = new Array(n).fill().map(() => new Array(m).fill(false));
+    var sol = []
+
+    const dfs = async (i, j, mi, mj) => {
+        mark[i][j] = true;
+        sol.push([i, j])
+        // console.log("np", i, j)
+        if (bkey || (i === mi && j === mj)) {
+            bkey = true
+            return;
+        }
+        for (let k = 0; k < 4; k++) {
+            if (bkey) return;
+            const ni = i + pi[k]
+            const nj = j + pj[k]
+            if (ni < 0 || nj < 0 || ni >= n || nj >= m) continue;
+            if (table[ni][nj] !== -1 && !mark[ni][nj]) {
+                switch (k) {
+                    case 0:
+                        await moveTop()
+                        break;
+                    case 1:
+                        await moveRight()
+                        break;
+                    case 2:
+                        await moveDown()
+                        break;
+                    case 3:
+                        await moveLeft()
+                        break;
+                }
+                await dfs(ni, nj, mi, mj)
+            }
+        }
+
+        sol.pop()
+        if (bkey) return;
+        const last = sol[sol.length - 1]
+        const [i1, i2] = [...last]
+        if (i === i1)
+            await moveTop(1, i2 - j)
+        else if (j === i2)
+            await moveTop(0, i1 - i)
+
+    }
+
+    await dfs(ci, cj, ki, kj)
+
+    const [ci1, cj1] = [...current]
+    bkey = false;
+    mark = new Array(n).fill().map(() => new Array(m).fill(false));
+    await dfs(ci1, cj1, ei, ej)
 
     /* HASTA AQUI */
 
